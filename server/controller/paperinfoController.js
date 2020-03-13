@@ -1,6 +1,7 @@
 const multer = require("multer");
 const mongoose = require("mongoose");
 const Paper = mongoose.model("Paper");
+const User = mongoose.model("User");
 const Volume = mongoose.model("Volume");
 const md5 = require("md5");
 const path = require("path");
@@ -72,18 +73,77 @@ exports.submitPaper = async (req, res) => {
     });
 };
 
+exports.getReviewerDetails = (req, res, next) => {
+  const reviewerId = req.body;
+  User.find()
+    .select("email")
+    .where("_id")
+    .in(reviewerId)
+    .where("isVerified")
+    .in(true)
+    .or([{ category: "author" }, { category: "admin" }])
+    .exec()
+    .then(async response => {
+      let allemail = await response.map(item => {
+        return item.email;
+      });
+
+      return allemail;
+    })
+    .then(result => {
+      req.reviewerMail = JSON.stringify(result);
+
+      return next();
+    })
+    .catch(err => {
+      return res.status(400).json({
+        message: {
+          error: err
+        }
+      });
+    });
+};
+
 exports.addReviewer = async (req, res) => {
   const { paperId } = req.params;
-
   const reviewerId = req.body;
-
   Paper.findById({ _id: paperId })
     .then(async response => {
       response.reviewer = [];
 
-      console.log("Reviewer===> ", response.reviewer);
-      reviewerId.map(item => {
-        response.reviewer.push(item);
+      return response;
+    })
+    .then(async result => {
+      result.reviewer = reviewerId;
+      return await result.save();
+    })
+    .then(update => {
+      return res.status(200).json({
+        message: {
+          success: update
+        }
+      });
+    })
+    .catch(err => {
+      return res.status(400).json({
+        message: {
+          error: err
+        }
+      });
+    });
+};
+
+exports.addKeyword = (req, res) => {
+  const { paperId } = req.params;
+
+  const keyword = req.body;
+  console.log(keyword);
+  Paper.findById({ _id: paperId })
+    .then(async response => {
+      response.keyword = [];
+
+      keyword.map(item => {
+        response.keyword.push(item);
       });
 
       return await response.save();
@@ -109,6 +169,7 @@ exports.allPaper = (req, res) => {
     .populate("volume")
     .exec()
     .then(response => {
+      // response.volume.find('')
       return res.status(200).json({
         response
       });

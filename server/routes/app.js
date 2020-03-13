@@ -71,8 +71,20 @@ router.put(
   "/api/v0/admin/add-reviewer/:paperId/update",
   Token.verifyToken,
   Token.checkLoginStatus,
+  paperController.getReviewerDetails,
   paperController.addReviewer
 );
+
+// add keyword and reviewer
+
+router.put(
+  "/api/v0/admin/add-keyword/:paperId/update",
+  Token.verifyToken,
+  Token.checkLoginStatus,
+  paperController.addKeyword
+);
+
+module.exports = router;
 
 // router.get("/api/v0/current/papers");
 // router.get("/api/v0/past/papers");
@@ -80,5 +92,3 @@ router.put(
 // router.get('/api/v0/admin/dashboard')
 // router.post('/api/v0/reviewer/update/papers')
 // router.post("/api/v0/admin/update/papers");
-
-module.exports = router;
