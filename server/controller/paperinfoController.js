@@ -5,6 +5,7 @@ const User = mongoose.model("User");
 const Volume = mongoose.model("Volume");
 const md5 = require("md5");
 const path = require("path");
+const { sentReviewer } = require("../nodemailer");
 
 let fileName = null;
 
@@ -115,6 +116,7 @@ exports.addReviewer = async (req, res) => {
     })
     .then(async result => {
       result.reviewer = reviewerId;
+      await sentReviewer(JSON.parse(req.reviewerMail));
       return await result.save();
     })
     .then(update => {
