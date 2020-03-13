@@ -1,19 +1,27 @@
 const mongoose = require("mongoose");
-
-const Volume = new mongoose.Schema({
-  title: {
-    type: String,
-    required: "Title is required"
+const { ObjectId } = mongoose.Schema;
+const Volumemodel = new mongoose.Schema({
+  start: {
+    type: String
   },
-
-  startDate: {
+  end: {
+    type: String
+  },
+  volume: {
+    type: String
+  },
+  svolume: {
+    type: String
+  },
+  postedBy: { type: ObjectId, ref: "User" },
+  createdAt: {
     type: Date,
     default: Date.now
   },
-  endDate: {
-    type: Date,
-    default: Date.now
+  status: {
+    type: Boolean,
+    default: false
   }
 });
 
-module.exports = mongoose.model("Volume", Volume);
+module.exports = mongoose.model("Volume", Volumemodel);

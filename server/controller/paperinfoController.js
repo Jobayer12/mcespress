@@ -1,6 +1,7 @@
 const multer = require("multer");
 const mongoose = require("mongoose");
-const Post = mongoose.model("Paper");
+const Paper = mongoose.model("Paper");
+const Volume = mongoose.model("Volume");
 const md5 = require("md5");
 const path = require("path");
 
@@ -46,14 +47,75 @@ exports.saveJournalfile = async (req, res, next) => {
 };
 
 exports.submitPaper = async (req, res) => {
-  const userinfo = JSON.parse(req.userinfo);
-  req.body.postedBy = userinfo.user.information._id;
-  const post = await new Post(req.body).save();
+  const info = JSON.parse(req.userinfo);
+  const { _id } = JSON.parse(req.volumeId);
+  req.body.postedBy = info.user.token._id;
+  req.body.volume = _id;
 
-  await Post.populate(post, {
-    path: "postedBy",
-    select: "_id name"
-  });
-  // fileName = null;
-  return res.json(post);
+  const paper = new Paper(req.body);
+
+  paper
+    .save()
+    .then(response => {
+      return res.status(200).json({
+        message: {
+          success: "paper submitted successfully"
+        }
+      });
+    })
+    .catch(err => {
+      return res.status(400).json({
+        message: {
+          error: err
+        }
+      });
+    });
+};
+
+exports.addReviewer = async (req, res) => {
+  const { paperId } = req.params;
+
+  const reviewerId = req.body;
+
+  Paper.findById({ _id: paperId })
+    .then(async response => {
+      response.reviewer = [];
+
+      console.log("Reviewer===> ", response.reviewer);
+      reviewerId.map(item => {
+        response.reviewer.push(item);
+      });
+
+      return await response.save();
+    })
+    .then(result => {
+      return res.status(200).json({
+        message: {
+          success: result
+        }
+      });
+    })
+    .catch(err => {
+      return res.status(400).json({
+        message: {
+          error: err
+        }
+      });
+    });
+};
+
+exports.allPaper = (req, res) => {
+  Paper.find()
+    .populate("volume")
+    .exec()
+    .then(response => {
+      return res.status(200).json({
+        response
+      });
+    })
+    .catch(err => {
+      return res.status(400).json({
+        err
+      });
+    });
 };

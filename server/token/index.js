@@ -46,3 +46,23 @@ exports.verifyToken = (req, res, next) => {
     });
   }
 };
+
+exports.checkUserLogingStatus = (req, res, next) => {
+  const info = JSON.parse(req.userinfo);
+  const { category } = info.user.token;
+  if (!category.includes("author")) {
+    return res.status(400).json({
+      message: `You can't authorize in this action`
+    });
+  }
+  return next();
+};
+exports.checkLoginStatus = (req, res, next) => {
+  const info = JSON.parse(req.userinfo);
+  if (!(info.user.token.category == "admin")) {
+    return res.status(200).json({
+      message: `You can't authorize in this action`
+    });
+  }
+  next();
+};

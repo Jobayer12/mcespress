@@ -1,38 +1,96 @@
 const mongoose = require("mongoose");
 const Volume = mongoose.model("Volume");
 const { validVolume } = require("../validation/index");
-exports.currentVolume = (req, res, next) => {};
+
+exports.runningVolume = async (req, res, next) => {
+  Volume.findOne({ status: true })
+    .then(response => {
+      if (response.status === true) {
+        req.volumeId = JSON.stringify(response);
+      }
+
+      return next();
+    })
+    .catch(err => {
+      return res.status(400).json({
+        message: {
+          error: err
+        }
+      });
+    });
+};
+exports.currentVolume = async (req, res) => {
+  const { id } = req.params;
+
+  Volume.findById({ _id: id })
+    .then(async response => {
+      if (response.status === true) {
+        return res.status(200).json({
+          message: {
+            success: "Volume already current"
+          }
+        });
+      }
+      await Volume.findOneAndUpdate(
+        { status: true },
+        { $set: { status: false } },
+        { upsert: true }
+      );
+      response.status = true;
+
+      return await response.save();
+    })
+    .then(result => {
+      return res.status(200).json({
+        message: {
+          success: result
+        }
+      });
+    })
+
+    .catch(err => {
+      console.log(err);
+      return res.status(400).json({
+        errors: "volume not found"
+      });
+    });
+};
 
 exports.addVolume = (req, res, next) => {
   const info = JSON.parse(req.userinfo);
-  if (!(info.user.token.category == "admin")) {
-    return res.status(200).json({
-      message: `You can't authorize in this action`
-    });
-  }
+  const { start, end, volume, svolume } = req.body;
+  const volumeadd = {
+    start,
+    end,
+    volume,
+    svolume
+  };
 
-  const volumeadd = ({ startDate, endDate, VolumeNo, subVolume } = req.body);
   const { valid, errors } = validVolume(volumeadd);
 
   if (!valid) {
     return res.status(400).json({ errors });
   }
 
-  const volume = new Volume({ startDate, endDate, VolumeNo, subVolume });
+  let volumeadding = new Volume({
+    start,
+    end,
+    volume,
+    svolume,
+    postedBy: info.user.token._id,
+    status: false
+  });
 
-  volume
-    .save(response => {
-      return res.status(200).json({
+  volumeadding
+    .save()
+    .then(response => {
+      return res.status(200).send({
         message: {
-          success: "Volume add successfully"
+          success: response
         }
       });
     })
     .catch(err => {
-      return res.status(400).json({
-        message: {
-          errors: err
-        }
-      });
+      console.log(err);
     });
 };

@@ -11,20 +11,17 @@ const postSchema = new mongoose.Schema(
       type: String,
       required: "Abstract is required"
     },
-    keyword: [
-      {
-        createdAt: { type: Date, default: Date.now },
-        postedBy: { type: ObjectId, ref: "User" }
-      }
-    ],
+    keyword: [String],
+    postedBy: { type: ObjectId, ref: "User" },
     pdf: {
       type: String
     },
-    postedBy: { type: ObjectId, ref: "User" },
     createdAt: {
       type: Date,
       default: Date.now
-    }
+    },
+    reviewer: [{ type: ObjectId, ref: "User", default: null }],
+    volume: { type: ObjectId, ref: "Volume" }
   },
   /* don't want to create our indices every time (nice for development, but can result in a performance hit) */
   { autoIndex: false }
@@ -33,7 +30,9 @@ const postSchema = new mongoose.Schema(
 /* Kind of like a middleware function after creating our schema (since we have access to next) */
 /* Must be a function declaration (not an arrow function), because we want to use 'this' to reference our schema */
 const autoPopulatePostedBy = function(next) {
-  this.populate("postedBy", "_id name");
+  this.populate("volume", "_id start end volume svolume");
+
+  this.populate("reviewer", "_id email end volume svolume");
 
   next();
 };
